@@ -1,0 +1,12 @@
+{
+  "name" : "WMQ",
+  "variableSets" : {
+    "default" : { }
+  },
+  "variableXpaths" : { },
+  "uidInXincludeCompntListFileName" : false,
+  "xincludeXpaths" : { },
+  "additionalFiles" : { },
+  "optionalComponentsInUse" : [ "com.adaptris:interlok-json:4.5.0-RELEASE", "com.adaptris:interlok-solace:4.5.0B2-RELEASE", "com.adaptris:interlok-webspheremq:4.5.0-RELEASE" ],
+  "structured" : true
+}

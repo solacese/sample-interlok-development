@@ -1,0 +1,249 @@
+<adapter>
+  <unique-id>MyInterlokInstance</unique-id>
+  <start-up-event-imp>com.adaptris.core.event.StandardAdapterStartUpEvent</start-up-event-imp>
+  <heartbeat-event-imp>com.adaptris.core.HeartbeatEvent</heartbeat-event-imp>
+  <shared-components>
+    <connections>
+      <jms-connection>
+        <unique-id>JMS_Solace_Cloud</unique-id>
+        <user-name>interlok</user-name>
+        <password>interlok123</password>
+        <vendor-implementation class="basic-solace-implementation">
+          <broker-url>tcp://mr-connection-1dl1pcl9av0.messaging.solace.cloud:55555</broker-url>
+          <message-vpn>ual-development</message-vpn>
+        </vendor-implementation>
+      </jms-connection>
+      <jms-connection>
+        <unique-id>jms_wmq</unique-id>
+        <user-name>app</user-name>
+        <password>app123</password>
+        <vendor-implementation class="basic-mq-series-implementation">
+          <ccsid>-1</ccsid>
+          <transport-type>MQJMS_TP_CLIENT_MQ_TCPIP</transport-type>
+          <queue-manager>QM1</queue-manager>
+          <channel>DEV.APP.SVRCONN</channel>
+          <broker-host>localhost</broker-host>
+          <broker-port>1414</broker-port>
+        </vendor-implementation>
+      </jms-connection>
+    </connections>
+    <services>
+      <json-path-service>
+        <unique-id>PullHeadersFromJSONPayload</unique-id>
+        <json-path-execution>
+          <source class="constant-data-input-parameter">
+            <value>$.PassengerCheckInDataRecord.eventType</value>
+          </source>
+          <target class="metadata-data-output-parameter">
+            <metadata-key>eventType</metadata-key>
+          </target>
+        </json-path-execution>
+        <json-path-execution>
+          <source class="constant-data-input-parameter">
+            <value>$.PassengerCheckInDataRecord.flightDetails.departureCity</value>
+          </source>
+          <target class="metadata-data-output-parameter">
+            <metadata-key>departureCity</metadata-key>
+          </target>
+        </json-path-execution>
+        <unwrap-json>true</unwrap-json>
+        <source class="string-payload-data-input-parameter"/>
+      </json-path-service>
+      <metadata-value-to-lower-case>
+        <unique-id>MD-EventType-LC</unique-id>
+        <metadata-key-regexp>eventType</metadata-key-regexp>
+      </metadata-value-to-lower-case>
+      <metadata-value-to-lower-case>
+        <unique-id>MD-DeptCity-LC</unique-id>
+        <metadata-key-regexp>departureCity</metadata-key-regexp>
+      </metadata-value-to-lower-case>
+      <copy-metadata-service>
+        <unique-id>Copy-AppName</unique-id>
+        <metadata-keys>
+          <key-value-pair>
+            <key>appName</key>
+            <value>appNameLc</value>
+          </key-value-pair>
+        </metadata-keys>
+      </copy-metadata-service>
+      <metadata-value-to-lower-case>
+        <unique-id>MD appName LC</unique-id>
+        <metadata-key-regexp>appNameLc</metadata-key-regexp>
+      </metadata-value-to-lower-case>
+    </services>
+  </shared-components>
+  <event-handler class="default-event-handler">
+    <unique-id>DefaultEventHandler</unique-id>
+    <connection class="null-connection">
+      <unique-id>boring-lamport</unique-id>
+    </connection>
+    <producer class="null-message-producer">
+      <unique-id>affectionate-panini</unique-id>
+    </producer>
+  </event-handler>
+  <heartbeat-event-interval>
+    <unit>MINUTES</unit>
+    <interval>60</interval>
+  </heartbeat-event-interval>
+  <message-error-handler class="null-processing-exception-handler">
+    <unique-id>grave-knuth</unique-id>
+  </message-error-handler>
+  <failed-message-retrier class="no-retries">
+    <unique-id>kickass-wozniak</unique-id>
+  </failed-message-retrier>
+  <channel-list>
+    <channel>
+      <consume-connection class="shared-connection">
+        <lookup-name>JMS_Solace_Cloud</lookup-name>
+      </consume-connection>
+      <produce-connection class="shared-connection">
+        <lookup-name>jms_wmq</lookup-name>
+      </produce-connection>
+      <workflow-list>
+        <standard-workflow>
+          <consumer class="jms-consumer">
+            <unique-id>jms_solace_consumer</unique-id>
+            <acknowledge-mode>CLIENT_ACKNOWLEDGE</acknowledge-mode>
+            <message-translator class="auto-convert-message-translator">
+              <jms-output-type>Text</jms-output-type>
+            </message-translator>
+            <endpoint>jms:queue:INTERLOK.TO.MQ</endpoint>
+          </consumer>
+          <service-collection class="service-list">
+            <unique-id>elated-heisenberg</unique-id>
+            <services>
+              <shared-service>
+                <unique-id>PullHeadersFromJSONPayload</unique-id>
+                <lookup-name>PullHeadersFromJSONPayload</lookup-name>
+              </shared-service>
+              <metadata-value-to-upper-case>
+                <unique-id>MD-EventType-UC</unique-id>
+                <metadata-key-regexp>eventType</metadata-key-regexp>
+              </metadata-value-to-upper-case>
+              <metadata-value-to-upper-case>
+                <unique-id>MD-DeptCity-LC</unique-id>
+                <metadata-key-regexp>departureCity</metadata-key-regexp>
+              </metadata-value-to-upper-case>
+              <log-message-service>
+                <unique-id>pensive-heisenberg</unique-id>
+                <log-level>DEBUG</log-level>
+              </log-message-service>
+            </services>
+          </service-collection>
+          <producer class="jms-producer">
+            <unique-id>jms_wmq_producer</unique-id>
+            <acknowledge-mode>CLIENT_ACKNOWLEDGE</acknowledge-mode>
+            <message-translator class="text-message-translator">
+              <metadata-filter class="regex-metadata-filter">
+                <exclude-pattern>JMS_Solace*</exclude-pattern>
+                <exclude-pattern>eventType|appName|departureCity</exclude-pattern>
+              </metadata-filter>
+            </message-translator>
+            <delivery-mode>PERSISTENT</delivery-mode>
+            <session-factory class="jms-default-producer-session"/>
+            <endpoint>jms:topic:UAL.DEV.%message{appName}.%message{eventType}.%message{departureCity}</endpoint>
+          </producer>
+          <produce-exception-handler class="null-produce-exception-handler"/>
+          <unique-id>jms_solace_wmq</unique-id>
+          <message-metrics-interceptor>
+            <unique-id>jms_solace_wmq-MessageMetrics</unique-id>
+            <timeslice-duration>
+              <unit>MINUTES</unit>
+              <interval>5</interval>
+            </timeslice-duration>
+            <timeslice-history-count>12</timeslice-history-count>
+          </message-metrics-interceptor>
+          <in-flight-workflow-interceptor>
+            <unique-id>jms_solace_wmq-InFlight</unique-id>
+          </in-flight-workflow-interceptor>
+          <comments><![CDATA[A standard workflow demonstrating JMS bridging between Solace and WebsphereMQ.]]></comments>
+        </standard-workflow>
+      </workflow-list>
+      <unique-id>JMS-Solace-WebsphereMQ</unique-id>
+      <auto-start>true</auto-start>
+      <comments><![CDATA[A simple JMS channel to demonstrate bridging messages between Solace and WebsphereMQ]]></comments>
+    </channel>
+    <channel>
+      <consume-connection class="shared-connection">
+        <lookup-name>jms_wmq</lookup-name>
+      </consume-connection>
+      <produce-connection class="shared-connection">
+        <lookup-name>JMS_Solace_Cloud</lookup-name>
+      </produce-connection>
+      <workflow-list>
+        <standard-workflow>
+          <consumer class="jms-queue-consumer">
+            <message-factory class="default-message-factory">
+              <default-char-encoding>IBM500</default-char-encoding>
+            </message-factory>
+            <unique-id>JMS MQ Queue Consumer</unique-id>
+            <acknowledge-mode>CLIENT_ACKNOWLEDGE</acknowledge-mode>
+            <message-translator class="auto-convert-message-translator">
+              <jms-output-type>Text</jms-output-type>
+            </message-translator>
+            <queue>TO.INTERLOK</queue>
+          </consumer>
+          <service-collection class="service-list">
+            <unique-id>hopeful-bhaskara</unique-id>
+            <services>
+              <change-char-encoding-service>
+                <unique-id>tiny-mcnulty</unique-id>
+                <char-encoding>UTF-8</char-encoding>
+              </change-char-encoding-service>
+              <shared-service>
+                <unique-id>PullHeadersFromJSONPayload</unique-id>
+                <lookup-name>PullHeadersFromJSONPayload</lookup-name>
+              </shared-service>
+              <shared-service>
+                <unique-id>MD-EventType-LC</unique-id>
+                <lookup-name>MD-EventType-LC</lookup-name>
+              </shared-service>
+              <shared-service>
+                <unique-id>MD-DeptCity-LC</unique-id>
+                <lookup-name>MD-DeptCity-LC</lookup-name>
+              </shared-service>
+              <shared-service>
+                <unique-id>Copy-AppName</unique-id>
+                <lookup-name>Copy-AppName</lookup-name>
+              </shared-service>
+              <shared-service>
+                <unique-id>MD appName LC</unique-id>
+                <lookup-name>MD appName LC</lookup-name>
+              </shared-service>
+            </services>
+          </service-collection>
+          <producer class="jms-producer">
+            <unique-id>JMS Publish to Solace Topic</unique-id>
+            <acknowledge-mode>CLIENT_ACKNOWLEDGE</acknowledge-mode>
+            <message-translator class="text-message-translator">
+              <metadata-filter class="regex-metadata-filter">
+                <exclude-pattern>eventType|appNameLc|departureCity</exclude-pattern>
+              </metadata-filter>
+            </message-translator>
+            <delivery-mode>PERSISTENT</delivery-mode>
+            <session-factory class="jms-default-producer-session"/>
+            <endpoint>jms:topic:ual/dev/c/%message{appNameLc}/%message{eventType}/%message{departureCity}</endpoint>
+          </producer>
+          <unique-id>grave-curie</unique-id>
+          <message-metrics-interceptor>
+            <unique-id>grave-curie-MessageMetrics</unique-id>
+            <timeslice-duration>
+              <unit>MINUTES</unit>
+              <interval>5</interval>
+            </timeslice-duration>
+            <timeslice-history-count>12</timeslice-history-count>
+          </message-metrics-interceptor>
+          <in-flight-workflow-interceptor>
+            <unique-id>grave-curie-InFlight</unique-id>
+          </in-flight-workflow-interceptor>
+        </standard-workflow>
+      </workflow-list>
+      <unique-id>JMS MQ to Solace</unique-id>
+      <auto-start>true</auto-start>
+    </channel>
+  </channel-list>
+  <message-error-digester class="standard-message-error-digester">
+    <unique-id>ErrorDigest</unique-id>
+    <digest-max-size>100</digest-max-size>
+  </message-error-digester>
+</adapter>

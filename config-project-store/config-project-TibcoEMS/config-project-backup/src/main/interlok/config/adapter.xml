@@ -1,0 +1,215 @@
+<adapter>
+  <unique-id>thirsty-mayer</unique-id>
+  <start-up-event-imp>com.adaptris.core.event.StandardAdapterStartUpEvent</start-up-event-imp>
+  <heartbeat-event-imp>com.adaptris.core.HeartbeatEvent</heartbeat-event-imp>
+  <shared-components>
+    <connections>
+      <jms-connection>
+        <unique-id>jms_solace</unique-id>
+        <user-name>interlokTibco</user-name>
+        <password>interlok123</password>
+        <vendor-implementation class="basic-solace-implementation">
+          <broker-url>tcp://ual-development.messaging.solace.cloud:55555</broker-url>
+          <message-vpn>ual-development</message-vpn>
+        </vendor-implementation>
+      </jms-connection>
+      <jms-connection>
+        <unique-id>Jms Tibco</unique-id>
+        <user-name>app</user-name>
+        <vendor-implementation class="basic-tibco-ems-implementation">
+          <broker-url>tcp://ec2-3-235-76-110.compute-1.amazonaws.com:7222</broker-url>
+        </vendor-implementation>
+      </jms-connection>
+    </connections>
+    <services>
+      <json-path-service>
+        <unique-id>PullHeadersFromJSONPayload</unique-id>
+        <json-path-execution>
+          <source class="constant-data-input-parameter">
+            <value>$.PassengerCheckInDataRecord.eventType</value>
+          </source>
+          <target class="metadata-data-output-parameter">
+            <metadata-key>eventType</metadata-key>
+          </target>
+        </json-path-execution>
+        <json-path-execution>
+          <source class="constant-data-input-parameter">
+            <value>$.PassengerCheckInDataRecord.flightDetails.departureCity</value>
+          </source>
+          <target class="metadata-data-output-parameter">
+            <metadata-key>departureCity</metadata-key>
+          </target>
+        </json-path-execution>
+        <unwrap-json>true</unwrap-json>
+        <source class="string-payload-data-input-parameter"/>
+      </json-path-service>
+      <metadata-value-to-lower-case>
+        <unique-id>MD-EventType-LC</unique-id>
+        <metadata-key-regexp>eventType</metadata-key-regexp>
+      </metadata-value-to-lower-case>
+      <metadata-value-to-lower-case>
+        <unique-id>MD-DeptCity-LC</unique-id>
+        <metadata-key-regexp>departureCity</metadata-key-regexp>
+      </metadata-value-to-lower-case>
+      <copy-metadata-service>
+        <unique-id>Copy-AppName</unique-id>
+        <metadata-keys>
+          <key-value-pair>
+            <key>appName</key>
+            <value>appNameLc</value>
+          </key-value-pair>
+        </metadata-keys>
+      </copy-metadata-service>
+      <metadata-value-to-lower-case>
+        <unique-id>MD appName LC</unique-id>
+        <metadata-key-regexp>appNameLc</metadata-key-regexp>
+      </metadata-value-to-lower-case>
+    </services>
+  </shared-components>
+  <event-handler class="default-event-handler">
+    <unique-id>DefaultEventHandler</unique-id>
+    <connection class="null-connection">
+      <unique-id>zen-kalam</unique-id>
+    </connection>
+    <producer class="null-message-producer">
+      <unique-id>nostalgic-shaw</unique-id>
+    </producer>
+  </event-handler>
+  <message-error-handler class="null-processing-exception-handler">
+    <unique-id>adoring-meitner</unique-id>
+  </message-error-handler>
+  <failed-message-retrier class="no-retries">
+    <unique-id>clever-keller</unique-id>
+  </failed-message-retrier>
+  <channel-list>
+    <channel>
+      <consume-connection class="shared-connection">
+        <lookup-name>jms_solace</lookup-name>
+      </consume-connection>
+      <produce-connection class="shared-connection">
+        <lookup-name>Jms Tibco</lookup-name>
+      </produce-connection>
+      <workflow-list>
+        <standard-workflow>
+          <consumer class="jms-queue-consumer">
+            <unique-id>nauseous-haibt</unique-id>
+            <acknowledge-mode>CLIENT_ACKNOWLEDGE</acknowledge-mode>
+            <message-translator class="auto-convert-message-translator">
+              <move-jms-headers>true</move-jms-headers>
+              <jms-output-type>Text</jms-output-type>
+            </message-translator>
+            <queue>INTERLOK.TO.TIBCO</queue>
+          </consumer>
+          <service-collection class="service-list">
+            <unique-id>gloomy-lichterman</unique-id>
+            <services>
+              <log-message-service>
+                <unique-id>cocky-dubinsky</unique-id>
+                <log-level>DEBUG</log-level>
+              </log-message-service>
+            </services>
+          </service-collection>
+          <producer class="jms-queue-producer">
+            <unique-id>distracted-stonebraker</unique-id>
+            <acknowledge-mode>CLIENT_ACKNOWLEDGE</acknowledge-mode>
+            <message-translator class="text-message-translator"/>
+            <delivery-mode>PERSISTENT</delivery-mode>
+            <session-factory class="jms-default-producer-session"/>
+            <queue>FROM.INTERLOK</queue>
+          </producer>
+          <unique-id>boring-boyd</unique-id>
+          <message-metrics-interceptor>
+            <unique-id>boring-boyd-MessageMetrics</unique-id>
+            <timeslice-duration>
+              <unit>MINUTES</unit>
+              <interval>5</interval>
+            </timeslice-duration>
+            <timeslice-history-count>12</timeslice-history-count>
+          </message-metrics-interceptor>
+          <in-flight-workflow-interceptor>
+            <unique-id>boring-boyd-InFlight</unique-id>
+          </in-flight-workflow-interceptor>
+        </standard-workflow>
+      </workflow-list>
+      <unique-id>Solace to Tibco</unique-id>
+    </channel>
+    <channel>
+      <consume-connection class="shared-connection">
+        <lookup-name>Jms Tibco</lookup-name>
+      </consume-connection>
+      <produce-connection class="shared-connection">
+        <lookup-name>jms_solace</lookup-name>
+      </produce-connection>
+      <workflow-list>
+        <standard-workflow>
+          <consumer class="jms-queue-consumer">
+            <unique-id>Consume from Tibco</unique-id>
+            <acknowledge-mode>CLIENT_ACKNOWLEDGE</acknowledge-mode>
+            <message-translator class="auto-convert-message-translator">
+              <jms-output-type>Text</jms-output-type>
+            </message-translator>
+            <queue>TO.INTERLOK</queue>
+          </consumer>
+          <service-collection class="service-list">
+            <unique-id>nauseous-leavitt</unique-id>
+            <services>
+              <shared-service>
+                <unique-id>PullHeadersFromJSONPayload</unique-id>
+                <lookup-name>PullHeadersFromJSONPayload</lookup-name>
+              </shared-service>
+              <shared-service>
+                <unique-id>MD-EventType-LC</unique-id>
+                <lookup-name>MD-EventType-LC</lookup-name>
+              </shared-service>
+              <shared-service>
+                <unique-id>MD-DeptCity-LC</unique-id>
+                <lookup-name>MD-DeptCity-LC</lookup-name>
+              </shared-service>
+              <shared-service>
+                <unique-id>Copy-AppName</unique-id>
+                <lookup-name>Copy-AppName</lookup-name>
+              </shared-service>
+              <shared-service>
+                <unique-id>MD appName LC</unique-id>
+                <lookup-name>MD appName LC</lookup-name>
+              </shared-service>
+              <log-message-service>
+                <unique-id>sick-khorana</unique-id>
+                <log-level>DEBUG</log-level>
+              </log-message-service>
+            </services>
+          </service-collection>
+          <producer class="jms-topic-producer">
+            <unique-id>Publish to Solace</unique-id>
+            <acknowledge-mode>CLIENT_ACKNOWLEDGE</acknowledge-mode>
+            <message-translator class="text-message-translator">
+              <metadata-filter class="regex-metadata-filter">
+                <exclude-pattern>eventType|appNameLc|departureCity</exclude-pattern>
+              </metadata-filter>
+            </message-translator>
+            <delivery-mode>PERSISTENT</delivery-mode>
+            <session-factory class="jms-default-producer-session"/>
+            <topic>ual/dev/c/%message{appNameLc}/%message{eventType}/%message{departureCity}</topic>
+          </producer>
+          <unique-id>distracted-goldwasser</unique-id>
+          <message-metrics-interceptor>
+            <unique-id>distracted-goldwasser-MessageMetrics</unique-id>
+            <timeslice-duration>
+              <unit>MINUTES</unit>
+              <interval>5</interval>
+            </timeslice-duration>
+            <timeslice-history-count>12</timeslice-history-count>
+          </message-metrics-interceptor>
+          <in-flight-workflow-interceptor>
+            <unique-id>distracted-goldwasser-InFlight</unique-id>
+          </in-flight-workflow-interceptor>
+        </standard-workflow>
+      </workflow-list>
+      <unique-id>Tibco to Solace</unique-id>
+    </channel>
+  </channel-list>
+  <message-error-digester class="standard-message-error-digester">
+    <unique-id>ErrorDigest</unique-id>
+    <digest-max-size>100</digest-max-size>
+  </message-error-digester>
+</adapter>

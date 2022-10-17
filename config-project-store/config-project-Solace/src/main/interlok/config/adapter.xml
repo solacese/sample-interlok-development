@@ -1,0 +1,135 @@
+<adapter>
+  <unique-id>zen-cray</unique-id>
+  <start-up-event-imp>com.adaptris.core.event.StandardAdapterStartUpEvent</start-up-event-imp>
+  <heartbeat-event-imp>com.adaptris.core.HeartbeatEvent</heartbeat-event-imp>
+  <shared-components>
+    <connections>
+      <jms-connection>
+        <unique-id>JMS_Solace_Cloud</unique-id>
+        <user-name>interlok</user-name>
+        <password>****</password>
+        <vendor-implementation class="basic-solace-implementation">
+          <broker-url>tcp://localhost:55555</broker-url>
+          <message-vpn>default</message-vpn>
+        </vendor-implementation>
+      </jms-connection>
+    </connections>
+    <services>
+      <json-path-service>
+        <unique-id>PullHeadersFromJSONPayload</unique-id>
+        <json-path-execution>
+          <source class="constant-data-input-parameter">
+            <value>$.PassengerCheckInDataRecord.eventType</value>
+          </source>
+          <target class="metadata-data-output-parameter">
+            <metadata-key>eventType</metadata-key>
+          </target>
+        </json-path-execution>
+        <json-path-execution>
+          <source class="constant-data-input-parameter">
+            <value>$.PassengerCheckInDataRecord.flightDetails.departureCity</value>
+          </source>
+          <target class="metadata-data-output-parameter">
+            <metadata-key>departureCity</metadata-key>
+          </target>
+        </json-path-execution>
+        <unwrap-json>true</unwrap-json>
+        <source class="string-payload-data-input-parameter"/>
+      </json-path-service>
+      <metadata-value-to-lower-case>
+        <unique-id>MD-EventType-LC</unique-id>
+        <metadata-key-regexp>eventType</metadata-key-regexp>
+      </metadata-value-to-lower-case>
+      <metadata-value-to-lower-case>
+        <unique-id>MD-DeptCity-LC</unique-id>
+        <metadata-key-regexp>departureCity</metadata-key-regexp>
+      </metadata-value-to-lower-case>
+      <copy-metadata-service>
+        <unique-id>Copy-AppName</unique-id>
+        <metadata-keys>
+          <key-value-pair>
+            <key>appName</key>
+            <value>appNameLc</value>
+          </key-value-pair>
+        </metadata-keys>
+      </copy-metadata-service>
+      <metadata-value-to-lower-case>
+        <unique-id>MD appName LC</unique-id>
+        <metadata-key-regexp>appNameLc</metadata-key-regexp>
+      </metadata-value-to-lower-case>
+    </services>
+  </shared-components>
+  <event-handler class="default-event-handler">
+    <unique-id>DefaultEventHandler</unique-id>
+    <connection class="null-connection">
+      <unique-id>elegant-almeida</unique-id>
+    </connection>
+    <producer class="null-message-producer">
+      <unique-id>awesome-varahamihira</unique-id>
+    </producer>
+  </event-handler>
+  <message-error-handler class="null-processing-exception-handler">
+    <unique-id>ecstatic-dubinsky</unique-id>
+  </message-error-handler>
+  <failed-message-retrier class="no-retries">
+    <unique-id>sharp-kare</unique-id>
+  </failed-message-retrier>
+  <channel-list>
+    <channel>
+      <consume-connection class="shared-connection">
+        <lookup-name>JMS_Solace_Cloud</lookup-name>
+      </consume-connection>
+      <produce-connection class="shared-connection">
+        <lookup-name>JMS_Solace_Cloud</lookup-name>
+      </produce-connection>
+      <workflow-list>
+        <standard-workflow>
+          <consumer class="jms-queue-consumer">
+            <unique-id>hopeful-almeida</unique-id>
+            <acknowledge-mode>CLIENT_ACKNOWLEDGE</acknowledge-mode>
+            <message-translator class="auto-convert-message-translator">
+              <move-jms-headers>true</move-jms-headers>
+              <jms-output-type>Text</jms-output-type>
+            </message-translator>
+            <queue>INTERLOK.OUT</queue>
+          </consumer>
+          <service-collection class="service-list">
+            <unique-id>peaceful-thompson</unique-id>
+            <services>
+              <log-message-service>
+                <unique-id>compassionate-mahavira</unique-id>
+                <log-level>DEBUG</log-level>
+              </log-message-service>
+            </services>
+          </service-collection>
+          <producer class="jms-queue-producer">
+            <unique-id>evil-meitner</unique-id>
+            <acknowledge-mode>CLIENT_ACKNOWLEDGE</acknowledge-mode>
+            <message-translator class="text-message-translator"/>
+            <delivery-mode>PERSISTENT</delivery-mode>
+            <session-factory class="jms-default-producer-session"/>
+            <queue>DataFromInterlok</queue>
+          </producer>
+          <unique-id>angry-roentgen</unique-id>
+          <message-metrics-interceptor>
+            <unique-id>angry-roentgen-MessageMetrics</unique-id>
+            <timeslice-duration>
+              <unit>MINUTES</unit>
+              <interval>5</interval>
+            </timeslice-duration>
+            <timeslice-history-count>12</timeslice-history-count>
+          </message-metrics-interceptor>
+          <in-flight-workflow-interceptor>
+            <unique-id>angry-roentgen-InFlight</unique-id>
+          </in-flight-workflow-interceptor>
+        </standard-workflow>
+      </workflow-list>
+      <unique-id>drunk-golick</unique-id>
+      <auto-start>true</auto-start>
+    </channel>
+  </channel-list>
+  <message-error-digester class="standard-message-error-digester">
+    <unique-id>ErrorDigest</unique-id>
+    <digest-max-size>100</digest-max-size>
+  </message-error-digester>
+</adapter>

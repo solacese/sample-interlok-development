@@ -1,0 +1,14 @@
+{
+  "name" : "Solace",
+  "variableSets" : {
+    "default" : { }
+  },
+  "variableXpaths" : {
+    "/adapter/channel-list/channel[unique-id=\"drunk-golick\"]/workflow-list/standard-workflow[unique-id=\"angry-roentgen\"]/consumer/message-selector" : "${bucketNum}"
+  },
+  "uidInXincludeCompntListFileName" : false,
+  "xincludeXpaths" : { },
+  "additionalFiles" : { },
+  "optionalComponentsInUse" : [ "com.adaptris:interlok-json:4.5.0-RELEASE", "com.adaptris:interlok-solace:4.5.0B2-RELEASE" ],
+  "structured" : true
+}
